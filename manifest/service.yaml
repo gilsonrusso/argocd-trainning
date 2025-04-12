@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: argo-service
+spec:
+  # type: LoadBalancer # it is not mandatory, visible to internet
+  selector:
+    app: frontend # filter all pods that named with nodeserver
+  type: ClusterIP # libera ip interno no servidor
+  # type: NodePort # expoe para uso externo, libera uma porta para todos os pods 30000 a 32762
+  # type: LoadBalancer # gera um ip para acessar a app de fora - mais utilizado em cloud
+  ports:
+    - name: argo-service
+      protocol: TCP
+      port: 80 # service port
+      targetPort: 3000 # container port
