@@ -76,7 +76,7 @@ containers: - args: - --kubelet-insecure-tls
 ### Port foward
 
 ```
-kubectl port-forward pods/nodeserver-86cfcd9958-d8cgf  9000:5000 -n default
+kubectl port-forward pods/frontend-778979c958-cvfws  9000:5000 -n default
 ```
 
 ### Transformar base64
@@ -141,4 +141,12 @@ eval "$(ssh-agent -s)"
 source ~/.bashrc
 
 ssh-add ~/.ssh/minha_chave_rsa
+```
+
+### ARGO LOGIN
+
+```bash
+argocd login localhost:8080 --username <SEU_USUARIO> --password <SUA_SENHA> --insecure
+argocd repo add git@github.com:minhaorganizacao/meu-projeto.git --ssh-private-key-path ~/.ssh/argo-repo-key
+argocd repo add git@github.com:gilsonrusso/argocd-trainning.git --ssh-private-key-path ~/.ssh/argocd_rsa
 ```

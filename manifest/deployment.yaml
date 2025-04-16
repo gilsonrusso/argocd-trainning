@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -11,10 +11,10 @@ spec:
     metadata:
       labels:
         app: frontend
-    spec: # specify all pods has
+    spec:
       containers:
         - name: frontend
-          image: "gilsonrusso/master-tailwind:v22"
+          image: "gilsonrusso/master-tailwind:latest"
           resources:
             requests:
               memory: "64Mi"
