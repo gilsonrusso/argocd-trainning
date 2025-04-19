@@ -1,0 +1,10 @@
+app:
+  containerPort: 3000
+  replicas: 1
+  image:
+    repository: "gilsonrusso/master-tailwind"
+    tag: "v21"
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
