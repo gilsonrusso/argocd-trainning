@@ -1,3 +1,3 @@
 app:
   image:
-    tag: "v21"
+    tag: v1.0.6
