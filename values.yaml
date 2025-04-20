@@ -2,8 +2,7 @@ app:
   containerPort: 3000
   replicas: 1
   image:
-    repository: "gilsonrusso/master-tailwind"
-    tag: "v21"
+    repository: "gilsonrusso/react-input-drag-drop"
   service:
     type: ClusterIP
     port: 80
