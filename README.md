@@ -1,161 +1,205 @@
-# Kind
+# 🚀 Projeto: ArgoCD com Helm e Kind
 
-- initial cluster
+Este projeto demonstra como levantar um ambiente local com [Kind](https://kind.sigs.k8s.io/), instalar o [ArgoCD](https://argo-cd.readthedocs.io/), e fazer deploy de aplicações Helm com CI/CD GitOps.
 
-```
-kind create cluster --config kind-config.yaml
-kind delete cluster --fullcycle
-```
+---
 
-## commads k8s
+## 🐳 Pré-requisitos
 
-- Observar o hpa
+- [Docker](https://www.docker.com/)
+- [Kind](https://kind.sigs.k8s.io/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [ArgoCD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/)
+- Git + Chave SSH configurada
 
-```md
-# watch -n1 kubectl get hpa
-```
+---
 
-### Aplicar arquivos de servicos
+## ⚙️ Criando o Cluster com Kind
 
-```md
-- kubectl apply -f k8s/deployment.yaml
-- kubectl apply -f k8s/service.yaml
-- kubectl apply -f k8s/secret.yaml
-- kubectl apply -f k8s/hpa.yaml
-- kubectl apply -f k8s/configmap-members.yaml
-- kubectl apply -f k8s/metrics-services.yaml
-- kubectl apply -f k8s/pvc.yaml
-- kubectl apply -f k8s/statefulset
+```bash
+kind create cluster --config kind-config.yaml --name fullcycle
 ```
 
-### Principais comandos kubectl
+> Para deletar o cluster:
 
-```md
-- kubectl get pods
-- kubectl get nodes
-- kubectl get services
-- kubectl get apiservices
-- kubectl get storageclass
-- kubectl get pvc
-- kubectl get statefulset
-- kubectl get deployment
-
-- kubectl delete deployment nodeserver
-- kubectl delete statefulset mystatefulset
-
-- kubectl top pod nodeserver-7648c5665c-7jcck
-- kubectl describe pod nodeserver-86cfcd9958-d8cgf
-- kubectl logs nodeserver-86cfcd9958-d8cgf
-
-- kubectl config get-contexts
-- kubectl config use-contexts kind-fullcly
+```bash
+kind delete cluster --name fullcycle
 ```
 
-## Scalando o statefulset na mao
+---
 
-```
-kubectl scale statefulset "name_statefulset" --replicas=5
-```
+## 📦 Instalando o ArgoCD
 
-### Principais comandos kind
-
-```md
-- kind create cluster --config k8s/kind.yaml --name=fullcycle
-```
-
-### Adicionar o metrics services no kind
-
-```md
-- wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-aplicar no spec do deploymente
-spec:
-containers: - args: - --kubelet-insecure-tls
-```
-
-### Port foward
-
-```
-kubectl port-forward pods/frontend-778979c958-cvfws  9000:5000 -n default
-```
-
-### Transformar base64
-
-```
- echo "123456" | base64 -- base decoder
-```
-
-# Argocd
-
-- Create argocd services and namespace
-
-```
+```bash
 kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+kubectl apply -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 
-- Visualize all argo services
+### Visualizar os serviços do ArgoCD
 
-```
+```bash
 kubectl get all -n argocd
-kubectl get all svc -n argocd
 kubectl logs -n argocd deploy/argocd-server
-
 ```
 
-- Service Type Load Balancer
+### Liberar acesso com Port Forward
 
-```
-kubectl edit svc/argocd-server -n argocd
-or
-kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-```
-
-- Port Forwarding
-
-```
+```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-- Get initial argo user and password
+> Agora você pode acessar o painel do ArgoCD: [http://localhost:8080](http://localhost:8080)
 
-```
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-```
+---
 
-admin
-admin123
+## 🔐 Acessando o ArgoCD
 
-- Create ssh-keygen
+### Usuário e senha padrão
 
 ```bash
-ssh-keygen -t rsa -b 4096 -C "seu_email@exemplo.com" -f ~/.ssh/nome_da_chave_rsa
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d
 ```
 
-- Para usar a chave SSH que você criou, o processo geralmente envolve o uso do ssh-agent e a adição da sua chave privada ao agente
+> Usuário padrão: `admin`
+
+### Login via CLI
 
 ```bash
-code ~/.bashrc
+argocd login localhost:8080 --username admin --password <senha> --insecure
+```
 
+---
+
+## 🔑 Configurando chave SSH
+
+1. Gere uma chave SSH:
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "seu_email@exemplo.com" -f ~/.ssh/argo-repo-key
+```
+
+2. Adicione a chave ao ssh-agent:
+
+```bash
 eval "$(ssh-agent -s)"
-source ~/.bashrc
-
-ssh-add ~/.ssh/minha_chave_rsa
+ssh-add ~/.ssh/argo-repo-key
 ```
 
-### ARGO LOGIN
+3. Adicione a chave pública no GitHub em **Settings > SSH and GPG keys**
+
+---
+
+## 🔗 Conectando repositório Git ao ArgoCD
 
 ```bash
-argocd login localhost:8080 --username <SEU_USUARIO> --password <SUA_SENHA> --insecure
-argocd repo add git@github.com:minhaorganizacao/meu-projeto.git --ssh-private-key-path ~/.ssh/argo-repo-key
+argocd repo add git@github.com:gilsonrusso/argocd-trainning.git \
+  --ssh-private-key-path ~/.ssh/argo-repo-key
 ```
 
-argocd login localhost:8080 --username admin --password admin123 --insecure
-argocd repo add git@github.com:gilsonrusso/argocd-trainning.git --ssh-private-key-path ~/.ssh/argo-repo-key
+---
 
-### ARGO COMMANDS
+## 🚀 Criando Aplicação no ArgoCD
+
 ```bash
-# Create Application in Argo cd
-argocd app create masterizando --repo git@github.com:gilsonrusso/argocd-trainning.git --path masterizando --dest-server https://kubernetes.default.svc --dest-namespace default
-
+argocd app create masterizando \
+  --repo git@github.com:gilsonrusso/argocd-trainning.git \
+  --path masterizando \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace default
 ```
+
+---
+
+## 🌐 Instalando o Ingress Controller (NGINX)
+
+Para acessar sua aplicação via Ingress (sem usar `kubectl port-forward`), instale o NGINX Ingress Controller no cluster:
+
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --set controller.hostNetwork=true \
+  --set controller.kind=DaemonSet \
+  --set controller.service.type=NodePort
+```
+
+> Certifique-se de que seu `kind.yaml` esteja mapeando as portas 80 e 443 para o host.
+
+---
+
+## 📈 Instalando o Metrics Server (para HPA)
+
+```bash
+wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+```
+
+> Edite o arquivo para permitir TLS inseguro:
+
+```yaml
+spec:
+  containers:
+    - args:
+        - --kubelet-insecure-tls
+```
+
+```bash
+kubectl apply -f components.yaml
+```
+
+---
+
+## 🔍 Comandos Úteis
+
+### ⚙️ Monitorando recursos no cluster
+
+```bash
+watch -n1 kubectl get hpa
+kubectl get pods
+kubectl top pod
+kubectl describe pod <nome>
+kubectl logs <nome>
+```
+
+### 📦 Aplicando recursos do Kubernetes
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/hpa.yaml
+kubectl apply -f k8s/configmap-members.yaml
+kubectl apply -f k8s/metrics-services.yaml
+kubectl apply -f k8s/pvc.yaml
+kubectl apply -f k8s/statefulset.yaml
+```
+
+### ⬆️ Escalando recursos manualmente
+
+```bash
+kubectl scale statefulset <nome> --replicas=3
+```
+
+---
+
+## 🧪 Port Forward para Debug
+
+```bash
+kubectl port-forward pods/frontend-xxxxxxx-xxxxx 9000:5000 -n default
+```
+
+---
+
+## 🧰 Extras
+
+### 🔐 Codificando valores em base64 (para Secrets)
+
+```bash
+echo "123456" | base64
+```
+
+---

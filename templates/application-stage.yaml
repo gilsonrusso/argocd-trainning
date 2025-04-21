@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/gilsonrusso/argocd-trainning.git
+    repoURL: {{.Values.app.image.repositoryHttpUrl}}
     targetRevision: main
     path: .
     helm:
